@@ -1,13 +1,13 @@
-# MoE-GRPO Speech Enhancement
+# X-SE Speech Enhancement
 
-MoE-GRPO is a speech enhancement research codebase centered on `FrozenExpertRouterGRPO`. It trains a lightweight router with GRPO to select or fuse frozen enhancement experts such as LiSenNet, FastEnhancer-S, and UL-UNAS.
+X-SE is a speech enhancement research codebase centered on `FrozenExpertRouterGRPO`. It trains a lightweight router with GRPO to select or fuse frozen enhancement experts such as LiSenNet, FastEnhancer-S, and UL-UNAS.
 
 This public package keeps only the core training/inference code, GRPO configuration, ONNX export helpers, and placeholder directories. Datasets, checkpoints, generated ONNX files, logs, and experiment outputs are intentionally excluded.
 
 ## Project Structure
 
 ```text
-alpha/enh/system/grpo.py                       # core MoE-GRPO system
+alpha/enh/system/grpo.py                       # core X-SE system
 alpha/enh/models.py                            # only SpectralStatsRouter, LiSen, FastEnhancer, UL-UNAS
 modules/blocks/                                # only lisen, fastenhancer, ulunas expert implementations
 modules/                                       # minimal training framework, datasets, STFT, metrics
@@ -22,8 +22,8 @@ data/, checkpoints/, outputs/                  # placeholder directories, not re
 ## Installation
 
 ```bash
-conda create -n moe-grpo python=3.10
-conda activate moe-grpo
+conda create -n X-SE python=3.10
+conda activate X-SE
 pip install -r requirements.txt
 ```
 
@@ -38,6 +38,11 @@ checkpoints/experts/lisennet.ckpt
 checkpoints/experts/fastenhancer_s.ckpt
 checkpoints/experts/ulunas.ckpt
 tools/DNSMOS/DNSMOS/sig_bak_ovr.onnx
+outputs/onnx/lisennet_fastenhancerS_ulunas_moe/manifest.json
+outputs/onnx/lisennet_fastenhancerS_ulunas_moe/router_features.onnx
+outputs/onnx/lisennet_fastenhancerS_ulunas_moe/experts/lisennet_expert.onnx
+outputs/onnx/lisennet_fastenhancerS_ulunas_moe/experts/fastenhancer_s_expert.onnx
+outputs/onnx/lisennet_fastenhancerS_ulunas_moe/experts/ulunas_expert.onnx
 examples/voicebank/data/train/noisy.flac.hdf5
 examples/voicebank/data/train/clean.flac.hdf5
 examples/voicebank/data/test/test.csv
@@ -47,7 +52,12 @@ examples/voicebank/data/rir/rir.wav.hdf5
 examples/voicebank/data/rir/rir.csv
 ```
 
-The DNSMOS ONNX model is required when `valid_MOS`, `test_MOS`, or GRPO DNSMOS reward scoring is enabled. Keep it local under `tools/DNSMOS/DNSMOS/`.
+There are two different ONNX locations:
+
+- DNSMOS scoring uses `tools/DNSMOS/DNSMOS/sig_bak_ovr.onnx`. This file is required when `valid_MOS`, `test_MOS`, or GRPO DNSMOS reward scoring is enabled.
+- Online MoE inference uses the exported runtime directory under `outputs/onnx/lisennet_fastenhancerS_ulunas_moe/`. Keep `manifest.json`, `router_features.onnx`, and the `experts/` ONNX files together because the runtime loads them from the manifest path.
+
+The checkpoint filenames above must match the `init` paths in the config. If your local checkpoint filenames are different, either rename them to the expected names or override the corresponding `router_grpo.experts.*.model.init` path on the command line.
 
 ## Training
 
@@ -86,7 +96,7 @@ python -m modules.launch \
 
 ## ONNX Export And Streaming Demo
 
-After expert checkpoints are available, export ONNX streaming assets:
+If you already have exported ONNX assets, place the full directory at `outputs/onnx/lisennet_fastenhancerS_ulunas_moe/` and skip directly to the test command below. After expert checkpoints are available, you can also export ONNX streaming assets yourself:
 
 ```bash
 python tools/export_grpo_onnx.py \

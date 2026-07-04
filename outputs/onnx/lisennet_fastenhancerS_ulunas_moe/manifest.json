@@ -1,0 +1,141 @@
+{
+  "version": 1,
+  "sample_rate": 16000,
+  "frame_samples": 512,
+  "hop_samples": 256,
+  "stft": {
+    "name": "torch",
+    "n_fft": 512,
+    "win_length": 512,
+    "hop_length": 256
+  },
+  "providers": [
+    "CUDAExecutionProvider",
+    "CPUExecutionProvider"
+  ],
+  "router": {
+    "path": "router_features.onnx",
+    "protocol": "features",
+    "feature_input": "features",
+    "providers": [
+      "CUDAExecutionProvider",
+      "CPUExecutionProvider"
+    ],
+    "provider_options": [
+      {
+        "device_id": 0
+      },
+      {}
+    ]
+  },
+  "experts": [
+    {
+      "name": "lisennet_expert",
+      "path": "experts/lisennet_expert.onnx",
+      "protocol": "lisen_stft",
+      "true_cache": true,
+      "input": "features",
+      "cache_inputs": [
+        "enc_conv_2",
+        "enc_conv_3",
+        "enc_conv_4",
+        "block_0_inter_hidden",
+        "block_0_conv_glu_cache",
+        "block_1_inter_hidden",
+        "block_1_conv_glu_cache",
+        "mask_conv"
+      ],
+      "cache_outputs": [
+        "enc_conv_2_out",
+        "enc_conv_3_out",
+        "enc_conv_4_out",
+        "block_0_inter_hidden_out",
+        "block_0_conv_glu_cache_out",
+        "block_1_inter_hidden_out",
+        "block_1_conv_glu_cache_out",
+        "mask_conv_out"
+      ],
+      "n_fft": 512,
+      "win_length": 512,
+      "compress_factor": 0.3,
+      "frame_samples": 512,
+      "hop_samples": 256,
+      "providers": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "provider_options": [
+        {
+          "device_id": 1
+        },
+        {}
+      ]
+    },
+    {
+      "name": "fastenhancer_s_expert",
+      "path": "experts/fastenhancer_s_expert.onnx",
+      "protocol": "fastenhancer_stft",
+      "true_cache": true,
+      "input": "spec_noisy",
+      "cache_inputs": [
+        "model_cache_0",
+        "model_cache_1",
+        "model_cache_2"
+      ],
+      "cache_outputs": [
+        "model_cache_0_out",
+        "model_cache_1_out",
+        "model_cache_2_out"
+      ],
+      "n_fft": 512,
+      "win_length": 512,
+      "compression": 0.3,
+      "eps": 1e-05,
+      "discard_last_freq_bin": true,
+      "frame_samples": 512,
+      "hop_samples": 256,
+      "providers": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "provider_options": [
+        {
+          "device_id": 2
+        },
+        {}
+      ]
+    },
+    {
+      "name": "ulunas_expert",
+      "path": "experts/ulunas_expert.onnx",
+      "protocol": "ulunas_stft",
+      "true_cache": true,
+      "input": "mix",
+      "cache_inputs": [
+        "conv_cache",
+        "tfa_cache",
+        "inter_cache"
+      ],
+      "cache_outputs": [
+        "conv_cache_out",
+        "tfa_cache_out",
+        "inter_cache_out"
+      ],
+      "n_fft": 512,
+      "win_length": 512,
+      "frame_samples": 512,
+      "hop_samples": 256,
+      "providers": [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "provider_options": [
+        {
+          "device_id": 3
+        },
+        {}
+      ]
+    }
+  ],
+  "export_errors": []
+}

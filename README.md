@@ -2,8 +2,6 @@
 
 X-SE is a speech enhancement research codebase centered on `FrozenExpertRouterGRPO`. It trains a lightweight router with GRPO to select or fuse frozen enhancement experts such as LiSenNet, FastEnhancer-S, and UL-UNAS.
 
-This public package keeps only the core training/inference code, GRPO configuration, ONNX export helpers, and placeholder directories. Datasets, checkpoints, generated ONNX files, logs, and experiment outputs are intentionally excluded.
-
 ## Project Structure
 
 ```text
@@ -31,7 +29,7 @@ For CUDA training, install a PyTorch build that matches your driver first, then 
 
 ## Data And Model Assets
 
-Do not commit real data or weights. Place local assets in these paths:
+Place local assets in these paths:
 
 ```text
 checkpoints/experts/lisennet.ckpt

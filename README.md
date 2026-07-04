@@ -2,6 +2,8 @@
 
 X-SE is a speech enhancement research codebase centered on `FrozenExpertRouterGRPO`. It trains a lightweight router with GRPO to select or fuse frozen enhancement experts such as LiSenNet, FastEnhancer-S, and UL-UNAS.
 
+The demo website and arXiv preprint are currently under preparation.
+
 ## Project Structure
 
 ```text
@@ -110,9 +112,3 @@ python tools/test_grpo_onnx_stream.py \
   --input data/example_noisy.wav \
   --output outputs/example_enhanced.wav
 ```
-
-## Notes
-
-- The public repository intentionally excludes datasets, checkpoints, ONNX files, logs, result tables, and generated media.
-- `KALDI_ROOT`, proxy settings, and notification tokens must be provided through environment variables if needed.
-- No project license has been selected in this package. Choose a license before publishing.

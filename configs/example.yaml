@@ -1,0 +1,272 @@
+name: voicebank_lisennet_fastenhancerS_ulunas_moe
+version: moe-router-grpo-1a
+n_gpu: 1
+
+system:
+  name: FrozenExpertRouterGRPO
+  exp_name: LiSenNet_FastEnhancerS_ULUNAS_MoE
+  debug: false
+  seed: 0
+  log_dir: outputs/logs
+  train_and_test: false
+  valid_metric: true
+  valid_MOS: true
+  test_metric: true
+
+router_grpo:
+  adapt_in_test: true
+  test_update_before_eval: false
+  adapt_in_denoise: true
+  device_map:
+    enabled: true
+    grpo_device: cuda:0
+    expert_devices:
+      - cuda:0
+      - cuda:0
+      - cuda:0
+  inference_branch:
+    enabled: true
+    runtime: onnx
+    frame_ms: 32
+    hop_ms: 16
+    parallel_experts: true
+    parallel_expert_workers: 3
+    stateful_experts: true
+    strict_expert_state: false
+    fallback_history_ms: 512
+    report_frame_rtf: false
+    onnx:
+      strict: true
+      use_iobinding: false
+      cuda_only: false
+      use_onnx_router: false
+      parallel_cuda_streams: false
+      override_manifest_providers: true
+      router_sync_interval_steps: 100
+      export_dir: outputs/onnx/lisennet_fastenhancerS_ulunas_moe
+      manifest: outputs/onnx/lisennet_fastenhancerS_ulunas_moe/manifest.json
+      router_path: outputs/onnx/lisennet_fastenhancerS_ulunas_moe/router_features.onnx
+      router_live_export: false
+      providers:
+        - CPUExecutionProvider
+  training_branch:
+    async: true
+  train_stream_sim:
+    enabled: true
+    infer_before_update: true
+    use_online_inference_branch: true
+    sync_infer_model_after_update: true
+    log_inference_audio_metric: false
+    log_latency: true
+    reset_infer_state_on_epoch_start: true
+  window_reward: true
+  reset_window_on_utt_change: false
+  # Frozen pretrained experts. Replace the two placeholder init paths before
+  # running, or override them on the command line.
+  experts:
+    - name: lisennet_expert
+      model:
+        name: LiSen
+        forward_type: waveform
+        mask: true
+        num_channels: 32
+        n_blocks: 2
+        n_fft: ${stft.n_fft}
+        hop_length: ${stft.hop_length}
+        compress_factor: 0.3
+        in_channels: 3
+        decoder_out_channel: 2
+        decoder_beta: 1.0
+        dropout_p: 0.1
+        init: checkpoints/experts/lisennet.ckpt
+        strict: false
+        debug: ${system.debug}
+
+    - name: fastenhancer_s_expert
+      model:
+        name: FastEnhancer
+        forward_type: waveform
+        size: s
+        config_group: fastenhancer
+        sample_rate: ${data.sample_rate}
+        mono_mode: mean
+        return_dict: false
+        init: checkpoints/experts/fastenhancer_s.ckpt
+        strict: false
+        debug: ${system.debug}
+
+    - name: ulunas_expert
+      model:
+        name: ULUNAS
+        forward_type: waveform
+        init: checkpoints/experts/ulunas.ckpt
+        sample_rate: ${data.sample_rate}
+        n_fft: ${stft.n_fft}
+        win_length: ${stft.win_length}
+        hop_length: ${stft.hop_length}
+        erb_low: 65
+        erb_high: 64
+        mono_mode: mean
+        strict: false
+        debug: ${system.debug}
+
+oracle_baseline:
+  select_metric: OVL
+  save_per_utt: true
+  per_utt_file: oracle_baseline_per_utt.csv
+  json_file: oracle_baseline_results.json
+
+grpo:
+  window_size: 5
+  min_window: 3
+  num_actions: 4
+  clip_eps: 0.2
+  beta: 0.02
+  ref_update_steps: 0
+  dns_weight: 1.0
+  dns_sig_weight: 0.0
+  dns_bak_weight: 0.0
+  dns_ovl_weight: 1.0
+  bak_drop_penalty: 0.5
+  ovl_drop_penalty: 0.5
+  distortion_weight: 0.01
+  distortion_to_clean: false
+  relative_mos: true
+  reward_base: ref
+  reward_scale: 1.0
+  sigma: 0.03
+  adv_mode: zscore
+  adv_eps: 1.0e-5
+  adv_clip_max: 2.0
+  logp_reduce: mean
+  kl_reduce: mean
+  max_grad_norm: 1.0
+  update_epochs: 2
+  train_minibatch_size: 0
+  policy_eval_mode: true
+  force_eval_logprob: false
+  log_scores: true
+  debug_log_interval: 10
+
+model:
+  name: SpectralStatsRouter
+  hidden_dims:
+    - 32
+    - 32
+  dropout: 0.0
+  temperature: 0.7
+  init_logits:
+    - 0.0
+    - 0.0
+    - 0.0
+  init: null
+
+data:
+  name: WavDataset
+  pairs: noisy2clean
+  data_dir: .
+  sample_rate: 16000
+  chunk_size: 249
+  valid_batch_size: 1
+  train:
+    name: WavDataset
+    noisy_store: examples/voicebank/data/train/noisy.flac.hdf5
+    noisy_csv: examples/voicebank/data/test/test.csv
+    clean_store: examples/voicebank/data/train/clean.flac.hdf5
+    clean_csv: examples/voicebank/data/test/test.csv
+    split_wav: true
+  valid:
+    name: ${data.name}
+    noisy_store: examples/voicebank/data/train/noisy.flac.hdf5
+    noisy_csv: examples/voicebank/data/test/test.csv
+    clean_store: examples/voicebank/data/train/clean.flac.hdf5
+    clean_csv: examples/voicebank/data/test/test.csv
+    split_wav: false
+  test:
+    name: ${data.name}
+    noisy_store: examples/voicebank/data/train/noisy.flac.hdf5
+    noisy_csv: examples/voicebank/data/test/test.csv
+    clean_store: examples/voicebank/data/train/clean.flac.hdf5
+    clean_csv: examples/voicebank/data/test/test.csv
+    split_wav: false
+  noise_store: examples/voicebank/data/noise/noise.wav.hdf5
+  noise_csv: examples/voicebank/data/noise/noise.csv
+  rir_store: examples/voicebank/data/rir/rir.wav.hdf5
+  rir_csv: examples/voicebank/data/rir/rir.csv
+  add_rir: -1
+  mix_param:
+    sr: ${data.sample_rate}
+    snr_lower: -10
+    snr_upper: 10
+    randomize_snr: true
+    target_level_lower: -35
+    target_level_upper: -15
+    fs: ${data.sample_rate}
+    audio_length: 30
+    silence_length: 0.2
+    clean_activity_threshold: 0.6
+    noise_activity_threshold: 0.0
+    is_test_set: false
+    lower_t60: 0.3
+    upper_t60: 1.3
+  dataloader:
+    batch_size: 1
+    shuffle: false
+    num_workers: 2
+    pin_memory: false
+    prefetch_factor: 2
+  data_augment:
+    remix: false
+    bandmask:
+      maxwidth: 0.2
+    shift: false
+    revecho: false
+
+loss:
+  name: L1Loss
+
+optimizer:
+  name: Adam
+  lr: 5.0e-4
+  betas:
+    - 0.9
+    - 0.999
+
+trainer:
+  max_epochs: 2
+  log_every_n_steps: 10
+  val_check_interval: 1.0
+  accelerator: gpu
+  devices: 1
+  strategy: auto
+  enable_progress_bar: true
+  inference_mode: false
+
+trainer_callbacks:
+  model_checkpoint:
+    monitor: valid_loss
+    mode: min
+    save_top_k: 3
+    save_last: true
+  early_stop: null
+  progress_bar: null
+  progress_logger: true
+
+stft:
+  name: torch
+  n_fft: 512
+  win_length: 512
+  hop_length: 256
+
+DNSMOS:
+  model_path: tools/DNSMOS/DNSMOS/sig_bak_ovr.onnx
+  providers: auto
+  torch_worker: true
+  score_full_audio: true
+
+pool:
+  name: ThreadPoolExecutor
+  max_workers: null
+
+cmd: train
+ckpt: null

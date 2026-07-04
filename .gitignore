@@ -1,0 +1,92 @@
+# Python cache and build output
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Environments and local secrets
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+env/
+ENV/
+conda/
+
+# IDE and OS files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Logs and experiment outputs
+logs/
+runs/
+wandb/
+lightning_logs/
+outputs/**
+exp/**
+!outputs/
+!outputs/.gitkeep
+!exp/
+!exp/.gitkeep
+
+# Data and generated manifests
+data/**
+examples/**/data/**
+*.csv
+*.tsv
+*.jsonl
+!data/
+!data/.gitkeep
+!examples/
+!examples/voicebank/
+!examples/voicebank/data/
+!examples/voicebank/data/.gitkeep
+
+# Checkpoints, model weights, and exported runtimes
+checkpoints/**
+*.ckpt
+*.pt
+*.pth
+*.tar
+*.onnx
+*.engine
+*.plan
+!checkpoints/
+!checkpoints/.gitkeep
+!tools/
+!tools/DNSMOS/
+!tools/DNSMOS/DNSMOS/
+!tools/DNSMOS/DNSMOS/.gitkeep
+!tools/DNSMOS/pDNSMOS/
+!tools/DNSMOS/pDNSMOS/.gitkeep
+
+# Audio, generated media, and archives
+*.wav
+*.flac
+*.mp3
+*.ogg
+*.png
+*.jpg
+*.jpeg
+*.pdf
+*.zip
+*.tar.gz
+*.rar
+
+# Notebook checkpoints and local release staging
+.ipynb_checkpoints/
+github_release/
+release/
